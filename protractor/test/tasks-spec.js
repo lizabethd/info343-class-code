@@ -3,6 +3,7 @@ describe('the tasks app', function() {
     var taskTitleInp = element(by.model('newTask.title'));
     var addTaskBtn = element(by.buttonText('Add Task'));
     var tasksList = element.all(by.repeater('task in tasks'));
+    var requiredMsg = $('.title-required-error');
 
     function addTask(title) {
         taskTitleInp.sendKeys(title);
@@ -17,7 +18,7 @@ describe('the tasks app', function() {
     }
 
     beforeEach(function() {
-        browser.get('http://localhost:8000');
+        browser.get('http://localhost:8000/');
     });
 
     it('must have the proper page title', function() {
@@ -52,5 +53,41 @@ describe('the tasks app', function() {
     it('must add multiple tasks', function() {
         addMultipleTasks(100);
         expect(tasksList.count()).toEqual(100);
+    });
+
+    it('must show required validation error', function() {
+        expect(requiredMsg.isPresent()).toEqual(false);
+        taskTitleInp.sendKeys('abc');
+        taskTitleInp.clear();
+        expect(requiredMsg.isPresent()).toEqual(true);
+        taskTitleInp.sendKeys('abc');
+        expect(requiredMsg.isPresent()).toEqual(false);
+    });
+
+    it('must disable add task button with blank title', function() {
+        expect(addTaskBtn.getAttribute('disabled')).toEqual('true');
+        taskTitleInp.sendKeys('abc');
+        expect(addTaskBtn.getAttribute('disabled')).toBe(null);
+        taskTitleInp.clear();
+        taskTitleInp.sendKeys('      ');
+        expect(addTaskBtn.getAttribute('disabled')).toEqual('true');
+    });
+
+    it('must toggle done with click', function() {
+        addTask('test style class');
+        addTask('not marked as done');
+        expect(tasksList.count()).toEqual(2);
+        tasksList.get(0).click();
+        expect(tasksList.get(0).getAttribute('class')).not.toContain('completed-task');
+    });
+
+    it('must purge completed tasks', function() {
+        addTask('Task 1');
+        addTask('Task 2');
+        expect(tasksList.count()).toEqual(2);
+        tasksList.get(0).click();
+        element(by.buttonText('Purge Completed Tasks')).click();
+        expect(tasksList.count()).toEqual(1);
+        expect(tasksList.get(0).getText()).toEqual('Task 2');
     });
 });
